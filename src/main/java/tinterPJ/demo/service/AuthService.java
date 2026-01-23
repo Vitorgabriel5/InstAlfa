@@ -14,6 +14,7 @@ import tinterPJ.demo.dto.RegisterRequest;
 import tinterPJ.demo.model.Role;
 import tinterPJ.demo.model.SubscriptionPlan;
 import tinterPJ.demo.model.User;
+import tinterPJ.demo.model.UserType;
 import tinterPJ.demo.repository.RoleRepository;
 import tinterPJ.demo.repository.SubscriptionPlanRepository;
 import tinterPJ.demo.repository.UserRepository;
@@ -24,6 +25,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -44,12 +46,31 @@ public class AuthService {
             throw new RuntimeException("Email já está em uso");
         }
 
+        if (request.getTipoUsuario() == UserType.PESSOA_FISICA) {
+            if (request.getCpf() == null || request.getCpf().isEmpty()) {
+                throw new RuntimeException("CPF e obrigatorio para Pessoa Fisica");
+            } else if(request.getTipoUsuario() == UserType.PESSOA_JURIDICA) {
+                if (request.getCnpj() == null || request.getCnpj().isEmpty()) {
+                    throw new RuntimeException("CNPJ e obrigatorio para Pessoa Juridica");
+                }
+                if (request.getRazaoSocial() == null || request.getRazaoSocial().isEmpty()) {
+                    throw new RuntimeException("Razao Social e obrigatorio para Pessoa Juridica");
+                }
+            }
+        }
+
         User user = new User();
         user.setNome(request.getNome());
         user.setEmail(request.getEmail());
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAtivo(true);
+        user.setTipoUsuario(request.getTipoUsuario());
+
+        user.setCpf(request.getCpf());
+        user.setCnpj(request.getCnpj());
+        user.setRazaoSocial(request.getRazaoSocial());
+        user.setNomeFantasia(request.getNomeFantasia());
 
         // Atribuir role padrão USER
         Role userRole = roleRepository.findByNome("ROLE_USER")
@@ -72,8 +93,8 @@ public class AuthService {
                     newPlan.setDescricao("Plano gratuito com funcionalidades limitadas");
                     newPlan.setPreco(new java.math.BigDecimal("0.00"));
                     newPlan.setDuracaoDias(0);
-                    newPlan.setPermiteAcesso(false); // Bloqueia acesso no plano FREE
-                    newPlan.setPeriodoTrialDias(7); // 7 dias de trial
+                    newPlan.setPermiteAcesso(false);
+                    newPlan.setPeriodoTrialDias(7);
                     return planRepository.save(newPlan);
                 });
 

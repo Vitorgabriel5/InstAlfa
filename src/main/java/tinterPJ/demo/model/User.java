@@ -52,6 +52,22 @@ public class User implements UserDetails {
     @Column(name = "ativo")
     private Boolean ativo = true;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_usuario")
+    private UserType tipoUsuario;
+
+    @Column(length = 11)
+    private String cpf;
+
+    @Column(length = 14)
+    private String cnpj;
+
+    @Column(name = "razao_social", length = 200)
+    private String razaoSocial;
+
+    @Column(name = "nome_fantasia", length = 200)
+    private String nomeFantasia;
+
     @Column(name = "data_criacao")
     private LocalDateTime dataCriacao;
 
@@ -80,7 +96,6 @@ public class User implements UserDetails {
         ultimaAtualizacao = LocalDateTime.now();
     }
 
-    // Implementação UserDetails
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
