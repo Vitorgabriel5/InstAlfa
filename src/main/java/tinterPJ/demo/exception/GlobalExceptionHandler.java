@@ -15,15 +15,6 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(SubscriptionException.class)
-    public ResponseEntity<Map<String, String>> handleSubscriptionException(SubscriptionException ex) {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "error");
-        response.put("message", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-    }
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(
             MethodArgumentNotValidException ex) {

@@ -1,191 +1,120 @@
 package tinterPJ.demo.service;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AuthenticationManager;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
+import tinterPJ.demo.dto.AuthRequest;
 import tinterPJ.demo.dto.AuthResponse;
-import tinterPJ.demo.dto.RegisterRequest;
-import tinterPJ.demo.model.*;
-import tinterPJ.demo.repository.RoleRepository;
-import tinterPJ.demo.repository.SubscriptionPlanRepository;
+import tinterPJ.demo.model.User;
 import tinterPJ.demo.repository.UserRepository;
 import tinterPJ.demo.security.JwtUtil;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
-
     @Mock
     private UserRepository userRepository;
-
-    @Mock
-    private RoleRepository roleRepository;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
 
     @Mock
     private JwtUtil jwtUtil;
 
     @Mock
-    private SubscriptionService subscriptionService;
+    private PasswordEncoder passwordEncoder;
 
     @Mock
-    private SubscriptionPlanRepository planRepository;
+    private AuthenticationManager authenticationManager;
 
     @InjectMocks
     private AuthService authService;
 
-    private RegisterRequest registerRequest;
-    private Role userRole;
-    private SubscriptionPlan planoFree;
-    private User savedUser;
 
-    @BeforeEach
-    void setUp() {
-        registerRequest = new RegisterRequest();
-        registerRequest.setNome("Joao Silva");
-        registerRequest.setEmail("joao@gmail.com");
-        registerRequest.setUsername("joao");
-        registerRequest.setPassword("senha123");
-
-        userRole = new Role();
-        userRole.setId(1L);
-        userRole.setNome("ROLE_USER");
-
-        planoFree = new SubscriptionPlan();
-        planoFree.setId(1L);
-        planoFree.setNome("FREE");
-        planoFree.setDescricao("Plano gratuito");
-        planoFree.setPreco(BigDecimal.ZERO);
-        planoFree.setDuracaoDias(0);
-        planoFree.setPermiteAcesso(false);
-        planoFree.setPeriodoTrialDias(7);
-
-        savedUser = new User();
-        savedUser.setId(1L);
-        savedUser.setUsername("Joao Silva");
-        savedUser.setEmail("joao@gmail.com");
-        savedUser.setPassword("senha123");
-        savedUser.setUsername("joao");
-
-    }
 
     @Test
-    void testRegisterPessoaFisica_Success() {
+    void shouldLoginSuccessfully() {
 
-        registerRequest.setTipoUsuario(UserType.PESSOA_FISICA);
-        registerRequest.setCpf("12345678900");
+        String username = "testuser";
+        String password = "123456";
 
-        when(userRepository.existsByUsername(any())).thenReturn(false);
-        when(userRepository.existsByEmail(any())).thenReturn(false);
-        when(passwordEncoder.encode(any())).thenReturn("encodedPassword");
-        when(roleRepository.findByNome("ROLE_USER")).thenReturn(Optional.of(userRole));
-        when(userRepository.save(any())).thenReturn(savedUser);
-        when(planRepository.findByNome("FREE")).thenReturn(Optional.of(planoFree));
-        when(subscriptionService.criarAssinatura(anyLong(),anyLong(),anyBoolean())).thenReturn(new Subscription());
-        when(jwtUtil.generateToken(any())).thenReturn("token123");
+        User user = new User();
+        user.setUsername(username);
+        user.setEmail("test@email.com");
+        user.setNome("Teste");
 
-        AuthResponse response = authService.register(registerRequest);
+        when(authenticationManager.authenticate(any()))
+                .thenReturn(null);
 
-        assertNotNull (response);
-        assertNotNull (response.getToken());
-        assertEquals("token123", response.getToken());
-        assertEquals("joao", response.getUsername());
-        verify(userRepository, times(1)).save(any());
-        verify(subscriptionService, times(1)).criarAssinatura(anyLong(), anyLong(), eq(true));
+        when(userRepository.findByUsername(username))
+                .thenReturn(Optional.of(user));
+
+        when(jwtUtil.generateToken(username))
+                .thenReturn("fake-jwt");
+
+        AuthRequest request = new AuthRequest(username, password);
+
+        AuthResponse response = authService.login(request);
+
+        assertNotNull(response);
+        assertEquals("fake-jwt", response.getToken());
+        assertEquals(username, response.getUsername());
+
+        verify(authenticationManager).authenticate(any());
+        verify(userRepository).findByUsername(username);
+        verify(jwtUtil).generateToken(username);
     }
 
-    @Test
-    void testRegisterPessoaFisica_SemCpf_ThowsException(){
-
-        registerRequest.setTipoUsuario(UserType.PESSOA_FISICA);
-        registerRequest.setCpf(null);
-
-        when(userRepository.existsByUsername(any())).thenReturn(false);
-        when(userRepository.existsByEmail(any())).thenReturn(false);
-
-        assertThrows(RuntimeException.class, () -> {
-            authService.register(registerRequest);
-        });
-    }
 
     @Test
-    void testRegisterPessoaJuridica_Success(){
+    void shouldFailWhenAuthenticationFails() {
 
-        registerRequest.setTipoUsuario(UserType.PESSOA_JURIDICA);
-        registerRequest.setCnpj("12345678000190");
-        registerRequest.setRazaoSocial("Tech Company LTDA");
+        String username = "testuser";
+        String wrongPassword = "wrong";
 
-        when(userRepository.existsByUsername(any())).thenReturn(false);
-        when(userRepository.existsByEmail(any())).thenReturn(false);
-        when(passwordEncoder.encode(any())).thenReturn("encodedPassword");
-        when(roleRepository.findByNome("ROLE_USER")).thenReturn(Optional.of(userRole));
-        when(userRepository.save(any())).thenReturn(savedUser);
-        when(planRepository.findByNome("FREE")).thenReturn(Optional.of(planoFree));
-        when(subscriptionService.criarAssinatura(anyLong(),anyLong(),anyBoolean())).thenReturn(new Subscription());
-        when(jwtUtil.generateToken(any())).thenReturn("token123");
+        when(authenticationManager.authenticate(any()))
+                .thenThrow(new RuntimeException("Bad credentials"));
 
-        AuthResponse response = authService.register(registerRequest);
-
-        assertNotNull (response);
-        assertNotNull (response.getToken());
-        verify(userRepository, times(1)).save(any(User.class));
-        verify(subscriptionService, times(1)).criarAssinatura(anyLong(),anyLong(), eq(true));
-    }
-
-    @Test
-    void testRegisterPessoaJuridica_semCnpj_ThowsException(){
-
-        registerRequest.setTipoUsuario(UserType.PESSOA_JURIDICA);
-        registerRequest.setCnpj(null);
-        registerRequest.setRazaoSocial("Tech Company");
-
-        when(userRepository.existsByUsername(any())).thenReturn(false);
-        when(userRepository.existsByEmail(any())).thenReturn(false);
-
-        assertThrows(RuntimeException.class, () -> {
-            authService.register(registerRequest);
-        });
-    }
-
-    @Test
-    void testRegister_UsernameJaExiste_ThowsException(){
-
-        registerRequest.setTipoUsuario(UserType.PESSOA_FISICA);
-        registerRequest.setCpf("12345678900");
-
-        when(userRepository.existsByUsername("joao")).thenReturn(true);
+        AuthRequest request = new AuthRequest(username, wrongPassword);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            authService.register(registerRequest);
+            authService.login(request);
         });
 
-        assertEquals("Username já está em uso",exception.getMessage());
+        assertEquals("Bad credentials", exception.getMessage());
+
+        verify(authenticationManager).authenticate(any());
     }
-
     @Test
-    void testRegister_EmailJaExiste_ThowsExeption(){
+    void shouldFailWhenUserNotFound() {
 
-        registerRequest.setTipoUsuario(UserType.PESSOA_JURIDICA);
-        registerRequest.setCpf("1234568900");
+        String username = "noone";
 
-        when(userRepository.existsByUsername(any())).thenReturn(false);
-        when(userRepository.existsByEmail("joao@gmail.com")).thenReturn(true);
+        AuthRequest request = new AuthRequest(username, "123");
+
+        when(authenticationManager.authenticate(any()))
+                .thenReturn(null);
+
+
+        when(userRepository.findByUsername(username))
+                .thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            authService.register(registerRequest);
+            authService.login(request);
         });
-        assertEquals("Email já está em uso",exception.getMessage());
+
+        assertEquals("Usuário não encontrado", exception.getMessage());
+
+        verify(authenticationManager).authenticate(any());
+        verify(userRepository).findByUsername(username);
     }
+
 }

@@ -1,9 +1,13 @@
 package tinterPJ.demo.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
+import lombok.*;
 
 @Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class AuthRequest {
     @NotBlank(message = "Username é obrigatório")
     private String username;

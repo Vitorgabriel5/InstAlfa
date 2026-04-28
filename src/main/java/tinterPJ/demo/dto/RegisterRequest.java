@@ -1,14 +1,19 @@
 package tinterPJ.demo.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.Email;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
-import tinterPJ.demo.model.UserType;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class RegisterRequest {
 
     @NotBlank(message = "Nome é obrigatório")
@@ -24,15 +29,7 @@ public class RegisterRequest {
     private String username;
 
     @NotBlank(message = "Senha é obrigatória")
-    @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
+    @Size(min = 6, max = 100, message = "Senha deve ter no mínimo 6 caracteres")
     private String password;
 
-    @NotNull(message = "Tipo de usuario e obrigatorio")
-    private UserType tipoUsuario;
-
-    private String cpf;
-
-    private String cnpj;
-    private String razaoSocial;
-    private String nomeFantasia;
 }
