@@ -1,18 +1,12 @@
 package tinterPJ.demo.service;
 
-
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import tinterPJ.demo.dto.*;
 import tinterPJ.demo.model.User;
 import tinterPJ.demo.repository.UserRepository;
 import tinterPJ.demo.security.JwtUtil;
-
-import java.util.UUID;
-
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +15,6 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest request) {
 
@@ -54,15 +47,16 @@ public class AuthService {
 
     public AuthResponse login(AuthRequest request) {
 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
-
-        User user = userRepository.findByUsername(request.getUsername())
+        User user = userRepository.findByUsernameIgnoreCase(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        System.out.println(">>> Senha digitada: " + request.getPassword());
+        System.out.println(">>> Hash no banco: " + user.getPassword());
+        System.out.println(">>> Bate? " + passwordEncoder.matches(request.getPassword(), user.getPassword()));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Senha inválida");
+        }
 
         String token = jwtUtil.generateToken(user.getUsername());
 
@@ -74,6 +68,4 @@ public class AuthService {
                 .message("Login realizado com sucesso")
                 .build();
     }
-
-
 }

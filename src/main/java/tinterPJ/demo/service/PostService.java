@@ -24,6 +24,7 @@ public class PostService {
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
     private final LikeRepository likeRepository;
+    private final NotificationService notificationService;
 
     public Post create(String content, String imageUrl, UUID userId) {
         Post post = new Post();
@@ -37,15 +38,18 @@ public class PostService {
 
     public List<PostResponseDTO> getFeed(UUID userId) {
 
-        List<UUID> followingIds = followRepository.findByFollowingId(userId)
-                .stream()
-                .map(f -> f.getFollowingId())
-                .toList();
+        List<UUID> followingIds = new ArrayList<>(
+                followRepository.findByFollowerId(userId)
+                        .stream()
+                        .map(f -> f.getFollowingId())
+                        .toList()
+        );
 
         followingIds.add(userId);
 
         List<Post> posts = postRepository
                 .findByUserIdInOrderByCreatedAtDesc(followingIds);
+
         return posts.stream().map(post -> {
 
             User user = userRepository.findById(post.getUserId()).orElseThrow();
@@ -68,16 +72,39 @@ public class PostService {
 
         }).toList();
     }
+    public List<PostResponseDTO> getPostsByUser(UUID userId) {
+        return postRepository.findByUserIdInOrderByCreatedAtDesc(List.of(userId))
+                .stream()
+                .map(post -> {
+                    User user = userRepository.findById(post.getUserId()).orElseThrow();
+                    long likesCount = likeRepository.countByPostId(post.getId());
+                    boolean liked = likeRepository.existsByUserIdAndPostId(userId, post.getId());
+                    return new PostResponseDTO(
+                            post.getId(), post.getContent(), post.getImageUrl(),
+                            post.getCreatedAt(), user.getId(), user.getUsername(),
+                            user.getProfilePicture(), likesCount, liked
+                    );
+                }).toList();
+    }
 
-    public void toggleLike(UUID userId, UUID postId) {
+    public void toggleLike(UUID postId, UUID userId) {
         if (likeRepository.existsByUserIdAndPostId(userId, postId)) {
             likeRepository.deleteByUserIdAndPostId(userId, postId);
-        }else  {
+        } else {
             Like like = new Like();
             like.setUserId(userId);
             like.setPostId(postId);
-
             likeRepository.save(like);
+
+            Post post = postRepository.findById(postId).orElseThrow();
+            if (!post.getUserId().equals(userId)) {
+                notificationService.create(
+                        post.getUserId(),
+                        userId,
+                        "like",
+                        "curtiu seu post."
+                );
+            }
         }
     }
 }

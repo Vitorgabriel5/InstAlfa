@@ -57,7 +57,7 @@ public class AuthController {
         emailService.sendEmail(
                 user.getEmail(),
                 "Redefinição de senha",
-                "Clique aqui: http://localhost:3000/reset?token=" + token
+                "Clique aqui: http://localhost:5173/reset?token=" + token
         );
 
         return ResponseEntity.ok("Email enviado");

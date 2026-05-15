@@ -1,10 +1,10 @@
 package tinterPJ.demo.service;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import tinterPJ.demo.dto.UserResponseDTO;
 import tinterPJ.demo.model.Follow;
 import tinterPJ.demo.repository.FollowRepository;
-import tinterPJ.demo.repository.UserRepository;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +15,9 @@ public class FollowService {
 
     private final FollowRepository followRepository;
     private final UserService userService;
+    private final NotificationService notificationService; // ← adicionar
 
+    @Transactional
     public void follow(UUID followerId, UUID followingId) {
 
         if (followerId.equals(followingId)) {
@@ -32,16 +34,24 @@ public class FollowService {
                 .build();
 
         followRepository.save(follow);
+
+        // ← adicionar isso
+        notificationService.create(
+                followingId,
+                followerId,
+                "follow",
+                "começou a seguir você."
+        );
     }
 
+    @Transactional
     public void unfollow(UUID followerId, UUID followingId) {
-
         if (!followRepository.existsByFollowerIdAndFollowingId(followerId, followingId)) {
             throw new RuntimeException("Você não segue esse usuário");
         }
-
         followRepository.deleteByFollowerIdAndFollowingId(followerId, followingId);
     }
+
 
     public long countFollowers(UUID userId) {
         return followRepository.countByFollowingId(userId);

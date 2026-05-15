@@ -1,5 +1,6 @@
 package tinterPJ.demo.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,7 @@ public class UserResponseDTO {
 
     private long followers;
     private long following;
-    private boolean isFollowing;
 
+    @JsonProperty("isFollowing")
+    private boolean isFollowing;
 }

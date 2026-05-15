@@ -31,6 +31,14 @@ public class PostController {
         return ResponseEntity.ok(postService.create(content, imageUrl, user.getId()));
     }
 
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyPosts() {
+        String username = SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        User user = userService.findByUsername(username);
+        return ResponseEntity.ok(postService.getPostsByUser(user.getId()));
+    }
+
     @PostMapping("/{postId}/like")
     public ResponseEntity<?> like(@PathVariable UUID postId) {
 

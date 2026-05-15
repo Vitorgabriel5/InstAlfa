@@ -40,7 +40,7 @@ public class User  {
 
     @NotBlank(message = "Username é obrigatório")
     @Size(min = 3, max = 50)
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, length = 255)
     private String username;
 
     @JsonIgnore

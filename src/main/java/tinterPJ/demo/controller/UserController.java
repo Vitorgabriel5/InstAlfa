@@ -6,8 +6,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import tinterPJ.demo.dto.UpdateUserRequest;
 import tinterPJ.demo.model.User;
 import tinterPJ.demo.service.FileStorageService;
+import tinterPJ.demo.service.NotificationService;
 import tinterPJ.demo.service.UserService;
 import tinterPJ.demo.dto.UserResponseDTO;
 
@@ -24,6 +26,7 @@ public class UserController {
 
     private final UserService userService;
     private final FileStorageService fileStorageService;
+    private final NotificationService notificationService;
 
     @GetMapping("/me")
     public ResponseEntity<UserResponseDTO> getCurrentUser() {
@@ -55,7 +58,6 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
 
         String username = SecurityContextHolder.getContext()
@@ -84,6 +86,35 @@ public class UserController {
 
         return ResponseEntity.ok(
                 userService.toResponse(targetUser, currentUser.getId())
+        );
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<UserResponseDTO> updateMe(@RequestBody UpdateUserRequest request) {
+        String username = SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        User user = userService.findByUsername(username);
+        return ResponseEntity.ok(userService.update(user.getId(), request));
+    }
+
+    @PutMapping("/me/username")
+    public ResponseEntity<UserResponseDTO> updateUsername(
+            @RequestParam String username
+    ) {
+
+        String currentUsername = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
+        User user = userService.findByUsername(currentUsername);
+
+        user.setUsername(username);
+
+        User updated = userService.save(user);
+
+        return ResponseEntity.ok(
+                userService.toResponse(updated, updated.getId())
         );
     }
 

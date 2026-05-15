@@ -1,18 +1,21 @@
-//package tinterPJ.demo.dto;
-//
-//import lombok.AllArgsConstructor;
-//import lombok.Builder;
-//import lombok.Data;
-//import lombok.NoArgsConstructor;
-//import tinterPJ.demo.model.ChatMessage;
-//import tinterPJ.demo.model.MessageType;
-//
-//import java.time.LocalDateTime;
-//
-//@Data
-//@Builder
-//@NoArgsConstructor
-//@AllArgsConstructor
-//public class ChatMessageDTO {
-//
-//}
+package tinterPJ.demo.dto;
+
+import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ChatMessageDTO {
+    private UUID id;
+    private UUID senderId;
+    private UUID receiverId;
+    private String content;
+    private String type;
+    private boolean seen;
+    private LocalDateTime createdAt;
+}

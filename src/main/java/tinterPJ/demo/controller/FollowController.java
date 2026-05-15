@@ -1,6 +1,7 @@
 package tinterPJ.demo.controller;
 
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,17 +35,13 @@ public class FollowController {
 
     @PostMapping("/{userId}")
     public ResponseEntity<String> follow(@PathVariable UUID userId) {
-
         followService.follow(getCurrentUserId(), userId);
-
         return ResponseEntity.ok("Seguiu com sucesso");
     }
 
     @DeleteMapping("/{userId}")
     public ResponseEntity<String> unfollow(@PathVariable UUID userId) {
-
         followService.unfollow(getCurrentUserId(), userId);
-
         return ResponseEntity.ok("Deixou de seguir");
     }
 
